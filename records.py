@@ -100,10 +100,11 @@ class Record(object):
 
 class RecordCollection(object):
     """A set of excellent Records from a query."""
-    def __init__(self, rows):
+    def __init__(self, rows, rowcount=0):
         self._rows = rows
         self._all_rows = []
         self.pending = True
+        self._affected_rows = rowcount
 
     def __repr__(self):
         return '<RecordCollection size={} pending={}>'.format(len(self), self.pending)
@@ -243,6 +244,9 @@ class RecordCollection(object):
         row = self.one()
         return row[0] if row else default
 
+    def affected_rows(self):
+        return self._affected_rows
+
 
 class Database(object):
     """A Database. Encapsulates a url and an SQLAlchemy engine with a pool of
@@ -363,7 +367,7 @@ class Connection(object):
         row_gen = (Record(cursor.keys(), row) for row in cursor)
 
         # Convert psycopg2 results to RecordCollection.
-        results = RecordCollection(row_gen)
+        results = RecordCollection(row_gen,cursor.rowcount)
 
         # Fetch all results if desired.
         if fetchall:
